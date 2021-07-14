@@ -10,17 +10,26 @@ const app = new Koa();
 const router = new Router();
 
 dotenv.config();
-app.use(bodyParser());
-const connection = mysql.createConnection({
+const dbConfig = {
     host: process.env.MYSQL_HOST,
     port: process.env.MYSQL_PORT,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE
-});
-connection.connect((err) => {
-    if (err) throw err;
-});
+};
+app.use(bodyParser());
+let connection;
+const handleDb = () => {
+    connection = mysql.createConnection(dbConfig);
+    connection.connect((err) => {
+        if (err) setTimeout(handleDb, 2000);
+    });
+    connection.on('error', (err) => {
+        if (err.code !== 'PROTOCOL_CONNECTION_LOST') throw err;
+        handleDb();
+    });
+};
+handleDb();
 passport.use('bearer', new BearerStrategy((token, done) => {
     async function getUserId() {
         return await new Promise((resolve, reject) => {
@@ -223,6 +232,6 @@ router.post('/sign-in', async (ctx) => {
     ctx.set('Content-Type', 'application/json');
     ctx.body = user;
 });
+
 app.use(router.routes());
 app.listen(process.env.PORT);
-
