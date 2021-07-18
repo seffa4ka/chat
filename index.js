@@ -133,7 +133,7 @@ router.post('/sign-in', async (ctx) => {
 
     if (!login || !password) ctx.throw(400);
 
-    if (login.length >= 6 || login.length <= 16 || password.length >= 6) ctx.throw(422);
+    if (login.length < 6 || login.length > 16 || password.length < 6) ctx.throw(422);
 
     const exist = await new Promise((resolve, reject) => {
         let sql = "SELECT login FROM `user` WHERE `login`=?";
