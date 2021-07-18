@@ -1,13 +1,16 @@
 const dotenv = require('dotenv');
+const http = require('http');
 const crypto = require('crypto');
 const mysql = require('mysql');
 const passport = require('passport');
 const BearerStrategy = require('passport-http-bearer').Strategy;
 const Router = require('koa-router');
 const Koa = require('koa');
-const bodyParser = require('koa-bodyparser');
 const app = new Koa();
+const cors = require('@koa/cors');
+const bodyParser = require('koa-bodyparser');
 const router = new Router();
+const {Server} = require("socket.io");
 
 dotenv.config();
 const dbConfig = {
@@ -17,8 +20,10 @@ const dbConfig = {
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE
 };
+app.use(cors());
 app.use(bodyParser());
 let connection;
+let IOConnections = [];
 const handleDb = () => {
     connection = mysql.createConnection(dbConfig);
     connection.connect((err) => {
@@ -65,11 +70,6 @@ passport.use('bearer', new BearerStrategy((token, done) => {
         })
         .catch((error) => done(error, null))
 }));
-app.use(async (ctx, next) => {
-    ctx.set('Access-Control-Allow-Origin', '*');
-    ctx.set('Access-Control-Allow-Headers', 'Content-Type');
-    await next();
-});
 router.post('/sign-in', async (ctx) => {
     const {login, password} = ctx.request.body;
 
@@ -239,4 +239,12 @@ router.post('/sign-in', async (ctx) => {
 });
 
 app.use(router.routes());
-app.listen(process.env.PORT);
+const server = http.createServer(app.callback())
+const io = new Server(server, {cors: {origin: '*'}});
+io.on('connection', (socket) => {
+    IOConnections.push(socket);
+    socket.on('disconnect', () => IOConnections.splice(IOConnections.indexOf(socket), 1));
+    socket.on('chat message', msg => io.emit('chat message', msg));
+});
+
+server.listen(process.env.PORT);

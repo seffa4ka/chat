@@ -10,12 +10,14 @@
   "author": "seffka",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^3.1.0",
     "dotenv": "^10.0.0",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^10.0.0",
     "mysql": "^2.18.1",
     "passport": "^0.4.1",
-    "passport-http-bearer": "^1.0.1"
+    "passport-http-bearer": "^1.0.1",
+    "socket.io": "^4.1.3"
   }
 }
